@@ -1,4 +1,7 @@
-let firebase = require('firebase/app');
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const firebase = require('firebase/app');
 const { getDatabase, ref, push, set, update, remove, onValue } = require('firebase/database');
 
 
@@ -13,75 +16,70 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
-// const getDatabase = require('firebase/database');
 
-let express = require('express');
-let app = express();
-let db = getDatabase();
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+const db = getDatabase();
 
-app.use(express.urlencoded({
-    extended: false
-}));
+// Express middleware
+app.use(express.urlencoded({extended: false}));
 app.use(express.static('public'))
 app.use(express.json())
 
+// Socket.io connection handling
+io.on('connection', (socket) => {
+    console.log('A user connected');
+});
 
 app.get('/', function (req, res) {
-    var todosRef = ref(db, 'todos');
+    const todosRef = ref(db, 'todos');
 
-    let responded = false;
+    // async
+    const fetchData = new Promise((resolve, reject) => {
+        onValue(todosRef, (snapshot) => {
+            const data = snapshot.val();
+            resolve(data);
+        }, (error) => {
+            reject(error);
+        });
+    });
 
-    onValue(todosRef, (snapshot) => {
-        const data = snapshot.val();
-
-        if (!responded) {
+    fetchData
+        .then((data) => {
             try {
                 res.render('index', {
-                    "todolist": data
+                    todolist: data,
                 });
-                responded = true;
             } catch (error) {
                 console.error('Error rendering template:', error);
                 res.status(500).send('Internal Server Error');
-                responded = true;
             }
-        }
-    });
-
+        })
+        .catch((error) => {
+            console.error('Error fetching data:', error);
+            res.status(500).send('Internal Server Error');
+        });
 });
 
 
+
 app.post('/create-item', function (req, res) {
-    var item = req.body.item;
-    var todosRef = ref(db, 'todos');
-    var itemRef = push(todosRef);
+    const item = req.body.item;
+    const todosRef = ref(db, 'todos');
+    const itemRef = push(todosRef);
 
-    let responded = false;
+    set(itemRef, { item })
+    .then(() => {
+      io.emit('dataUpdated', { message: 'Data updated' });
+      res.json({ success: true });
 
-    set(itemRef, {
-        "item": item
-    }).then(function () {
-        
-        if (!responded) {
-            responded = true;
-            
-            onValue(todosRef, (snapshot) => {
-                const data = snapshot.val();
-                res.send(data);
-
-                setTimeout(() => {
-                    res.redirect('/');
-                }, 0);
-            });
-        }
-    }).catch(function (error) {
-        console.error("Error writing to database:", error);
-        
-        if (!responded) {
-            responded = true;
-            res.status(500).send("Internal Server Error");
-        }
+    })
+    .catch((error) => {
+      console.error('Error writing to database:', error);
+      res.status(500).send('Internal Server Error');
     });
+
 });
 
 
@@ -98,8 +96,10 @@ app.post('/update-item', function (req, res) {
     update(dbRef, {
         item: req.body.text
     }).then(() => {
-        res.send("Updated Success");
-        
+        // res.send("Updated Success");
+        io.emit('updateSuccess', { message: 'Update Success' });
+        res.json({ success: true });
+
     }).catch((error) => {
         console.error("Error updating item:", error);
         res.status(500).send("Internal Server Error");
@@ -111,13 +111,9 @@ app.post('/delete-item', function (req, res) {
     const dbRef = ref(getDatabase(), 'todos/' + id);
 
     remove(dbRef).then(() => {
-        res.send("Delete Success");
-
-        if (!res.headersSent) {
-            res.redirect('/');
-        }
-
-        return; 
+        // res.send("Delete Success");
+        io.emit('deleteSuccess', { message: 'Delete Success' });
+        res.json({ success: true });
 
     }).catch((error) => {
         console.error("Error deleting item:", error);
@@ -125,4 +121,8 @@ app.post('/delete-item', function (req, res) {
     });
 });
 
-app.listen(3000);
+// Start the server
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});

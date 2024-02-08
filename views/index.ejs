@@ -6,22 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My To-do List</title>
 
-    <!-- Bootstrap CSS-->
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <!-- Socket.io -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="/script.js"></script>
 
 
 </head>
 
 <body>
     <div class="container">
-        <h1 class="display-4 text-center py-1" style="margin-top: 20px;">Hello, TODO</H1>
+        <h1 class="display-4 text-center py-1" style="margin-top: 20px;"> Daily Doings </H1>
         <!-- input area -->
         <div class="jumbotron p-3 shadow-sm">
             <form action="/create-item" method="POST">
                 <div class="d-flex align-items-center">
                     <input name="item" autofocus autocomplete="off" class="form-control mr-3" type="text" style="flex: 1;">
-                    <button class="btn btn-primary">新增項目</button>
+                    <button class="btn btn-primary">Add item</button>
                 </div>
             </form>
         </div>
