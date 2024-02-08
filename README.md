@@ -49,6 +49,6 @@ node app.js
 ```
 Open the browser and type the following URL
 ```
-localhost:3000/
+http://localhost:3000
 ```
 
