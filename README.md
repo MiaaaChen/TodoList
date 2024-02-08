@@ -1,6 +1,6 @@
 # TodoList
 It's a to-do list application using Node.js.
-![](https://imgur.com/bRNF5kL.png)
+![](https://imgur.com/cRZzIMf.png)
 
 ## Installation
 ### 1. Express framework
